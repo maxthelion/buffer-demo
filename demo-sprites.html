@@ -1,0 +1,150 @@
+<html>
+<head>
+  <style type="text/css" media="screen">
+  #myBtn {
+    position: absolute;
+    left: 100px;
+    width: 100px;
+    display:block;
+    text-align: center;
+    top: 140px;
+    text-decoration: none;
+    color: #fff;
+    font-family: arial;
+  }
+  </style>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+<script type="text/javascript">
+  var ctx
+  var connected = true
+  var missedEvents = []
+
+  $().ready(function(){
+    var canvas = document.getElementById("myCanvas");
+    ctx = canvas.getContext("2d");
+    $('#myBtn').text('disconnect')
+    $('#myBtn').css("background", "red")
+    $('#myBtn').click(function(){
+      if (connected){
+        connected =  false
+        missedEvents = []
+        $(this).text("connect")
+        $(this).css("background", "green")
+      } else {
+        connected =  true
+        $(this).text("disconnect")
+        $(this).css("background", "red")
+      }
+      return false
+    })
+  })
+
+  var sprites = []
+  var events = []
+  var missedEvents = []
+  var i = 0
+  var index = 0
+  var speed = 4
+  var spacing = 24
+  var lifeDefault = 50
+  var interval = setInterval(function(){
+    manageEvents()
+    manageSprites()
+    redraw(sprites)
+    i++
+  }, 50)
+  
+  function manageEvents(){
+    if (i%speed == 1){
+      index ++
+      if (connected){
+        if (missedEvents.length > 1){
+          events = events.concat(missedEvents)
+          missedEvents = []
+        }
+        events.push({
+          index: index,
+          type: 'normal'
+        })
+      } else {
+        missedEvents.push({
+          index: index,
+          type: 'missed'
+        })
+      }
+    }
+  }
+  
+  function manageSprites(){
+    sprites.forEach(function(s){
+      if (s.life){
+        s.life -= 1
+      }
+    })
+    sprites = sprites.filter( function(s){ return s.life == undefined || s.life > 0 } )
+    
+    if (events.length > 0){
+      var latest = events.shift()
+      sprites.push({
+        index: latest.index,
+        life: lifeDefault,
+        color: latest.type
+      })
+    }
+    
+    addWaitingEvent()
+    if (connected){
+      sprites = sprites.filter( function(s){ return s.life != undefined } )
+    }
+  }
+  
+  function addWaitingEvent(){
+    var latestSprite = sprites[sprites.length-1]
+    if (events.length == 0 && latestSprite && (i/speed-latestSprite.index) > 1){
+      latestSprite.color = "waiting"
+      latestSprite.life = undefined
+    }
+  }
+
+  function redraw(sprites){
+    ctx.clearRect(0, 0, 300, 300)
+    sprites.forEach(function(sprite){
+      ctx.save();
+      ctx.translate(150, 150); // translate to centre
+      degrees = (360 / spacing) * sprite.index
+      ctx.rotate((Math.PI/180)*degrees);
+      var changeFactor = Math.abs(Math.sin(i/speed - (sprite.index + 1)))
+      if (sprite.color == "missed"){
+        color = "rgba(108, 220, 80, "+(sprite.life/lifeDefault)+")"
+      } else if (sprite.color == "normal"){
+        color = "rgba(80, 220, 220, "+(sprite.life/lifeDefault)+")"
+      } else if (sprite.color == "waiting"){
+        color = "rgba(255, 0, 0, "+( 0.5 + changeFactor*0.5 )+")"
+      }
+
+      ctx.fillStyle = color;
+      
+      // ctx.fillRect(0,-50, 10, 10);
+      if (sprite.life) {
+        var radius = 5 + (sprite.life/lifeDefault * 5)
+      } else {
+        var radius = 10 + changeFactor*5
+      }
+      var x = 0
+      var y = -130
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, 2 * Math.PI, false);
+      ctx.fill();
+      
+      ctx.restore();
+    })
+    
+  }
+</script>
+</head>
+<body>
+  <canvas id="myCanvas" width="300px" height="300px" style=""></canvas>
+ 
+   <a id="myBtn" href="#">stop</a>
+</body>
+</html>
