@@ -53,12 +53,12 @@
     redraw(sprites)
     i++
   }, 50)
-  
+
   function manageEvents(){
     if (i%speed == 1){
       index ++
       if (connected){
-        if (missedEvents.length > 1){
+        if (missedEvents.length > 0){
           events = events.concat(missedEvents)
           missedEvents = []
         }
@@ -91,16 +91,17 @@
         color: latest.type
       })
     }
-    
+
+
     addWaitingEvent()
     if (connected){
       sprites = sprites.filter( function(s){ return s.life != undefined } )
     }
   }
-  
+
   function addWaitingEvent(){
     var latestSprite = sprites[sprites.length-1]
-    if (events.length == 0 && latestSprite && (i/speed-latestSprite.index) > 1){
+    if (events.length == 0 && latestSprite && (i/(speed*1.0)-latestSprite.index) == 1){
       latestSprite.color = "waiting"
       latestSprite.life = undefined
     }
@@ -113,22 +114,23 @@
       ctx.translate(150, 150); // translate to centre
       degrees = (360 / spacing) * sprite.index
       ctx.rotate((Math.PI/180)*degrees);
-      var changeFactor = Math.abs(Math.sin(i/speed - (sprite.index + 1)))
+
+      var changeFactor = Math.sin(i/speed - (sprite.index)) / 4
+
       if (sprite.color == "missed"){
         color = "rgba(108, 220, 80, "+(sprite.life/lifeDefault)+")"
       } else if (sprite.color == "normal"){
         color = "rgba(80, 220, 220, "+(sprite.life/lifeDefault)+")"
       } else if (sprite.color == "waiting"){
-        color = "rgba(255, 0, 0, "+( 0.5 + changeFactor*0.5 )+")"
+        color = "rgba(255, 0, 0, "+( 0.75 + changeFactor )+")"
       }
 
       ctx.fillStyle = color;
-      
-      // ctx.fillRect(0,-50, 10, 10);
+
       if (sprite.life) {
         var radius = 5 + (sprite.life/lifeDefault * 5)
       } else {
-        var radius = 10 + changeFactor*5
+        var radius = 10 + changeFactor*10
       }
       var x = 0
       var y = -130
